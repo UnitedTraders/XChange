@@ -10,6 +10,7 @@ import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.hitbtc.v2.HitbtcAdapters;
 import org.knowm.xchange.hitbtc.v2.dto.HitbtcBalance;
+import org.knowm.xchange.hitbtc.v2.dto.HitbtcException;
 import org.knowm.xchange.hitbtc.v2.dto.HitbtcOrder;
 import org.knowm.xchange.hitbtc.v2.dto.HitbtcOwnTrade;
 
@@ -64,4 +65,7 @@ public class HitbtcTradeServiceRaw extends HitbtcBaseService {
     return hitbtc.getTradingBalance();
   }
 
+  public List<HitbtcOrder> getOrders() throws IOException {
+    return hitbtc.getHitbtcRecentOrders();
+  }
 }

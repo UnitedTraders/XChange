@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.dto.Order.OrderStatus;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.account.Balance;
 import org.knowm.xchange.dto.account.FundingRecord;
@@ -301,4 +302,22 @@ public class HitbtcAdapters {
     }
   }
 
+  public static OrderStatus adaptOrderStatus(String status) {
+    switch(status) {
+      case "new": 
+        return OrderStatus.NEW;
+      case "suspended": 
+        return OrderStatus.PENDING_NEW;
+      case "partiallyFilled": 
+        return OrderStatus.PARTIALLY_FILLED;
+      case "filled": 
+        return OrderStatus.FILLED;
+      case "canceled": 
+        return OrderStatus.CANCELED;
+      case "expired": 
+        return OrderStatus.EXPIRED;
+      default:
+        throw new RuntimeException("Unknown HitBTC order status: " + status);
+    }
+  }
 }

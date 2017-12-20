@@ -1,12 +1,18 @@
 package org.knowm.xchange.hitbtc.v2.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
+import org.knowm.xchange.dto.Order.OrderStatus;
+import org.knowm.xchange.dto.Order.OrderType;
+import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.dto.trade.OpenOrders;
@@ -26,103 +32,141 @@ import org.knowm.xchange.service.trade.params.orders.OpenOrdersParams;
 
 public class HitbtcTradeService extends HitbtcTradeServiceRaw implements TradeService {
 
-  public HitbtcTradeService(Exchange exchange) {
-    super(exchange);
-  }
-
-  @Override
-  public OpenOrders getOpenOrders() throws IOException {
-    return getOpenOrders(createOpenOrdersParams());
-  }
-
-  @Override
-  public OpenOrders getOpenOrders(OpenOrdersParams params) throws IOException {
-    List<HitbtcOrder> openOrdersRaw = getOpenOrdersRaw();
-    return HitbtcAdapters.adaptOpenOrders(openOrdersRaw);
-  }
-
-  @Override
-  public String placeMarketOrder(MarketOrder marketOrder) throws IOException {
-    return placeMarketOrderRaw(marketOrder).clientOrderId;
-  }
-
-  @Override
-  public String placeLimitOrder(LimitOrder limitOrder) throws IOException {
-    return placeLimitOrderRaw(limitOrder).clientOrderId;
-  }
-
-  @Override
-  public boolean cancelOrder(String orderId) throws IOException {
-    HitbtcOrder cancelOrderRaw = cancelOrderRaw(orderId);
-    return "canceled".equals(cancelOrderRaw.status);
-  }
-
-  @Override
-  public boolean cancelOrder(CancelOrderParams orderParams) throws IOException {
-    if (orderParams instanceof CancelOrderByIdParams) {
-      return cancelOrder(((CancelOrderByIdParams) orderParams).getOrderId());
-    } else {
-      return false;
-    }
-  }
-
-  /**
-   * Required parameters: {@link TradeHistoryParamPaging} {@link TradeHistoryParamCurrencyPair}
-   */
-  @Override
-  public UserTrades getTradeHistory(TradeHistoryParams params) throws IOException {
-
-    int count = 1000;
-    int offset = 0;
-
-    if (params instanceof TradeHistoryParamPaging) {
-      TradeHistoryParamPaging pagingParams = (TradeHistoryParamPaging) params;
-      if (pagingParams.getPageLength() != null) {
-        count = pagingParams.getPageLength();
-      }
-
-      Integer pageNumber = pagingParams.getPageNumber();
-      offset = count * (pageNumber != null ? pageNumber : 0);
+    public HitbtcTradeService(Exchange exchange) {
+        super(exchange);
     }
 
-    String symbols = null;
-    if (params instanceof TradeHistoryParamCurrencyPair) {
-      TradeHistoryParamCurrencyPair tradeHistoryParamCurrencyPair = (TradeHistoryParamCurrencyPair) params;
-      CurrencyPair pair = tradeHistoryParamCurrencyPair.getCurrencyPair();
-      symbols = HitbtcAdapters.adaptCurrencyPair(pair);
+    @Override
+    public OpenOrders getOpenOrders() throws IOException {
+        return getOpenOrders(createOpenOrdersParams());
     }
 
-    List<HitbtcOwnTrade> tradeHistoryRaw = getTradeHistoryRaw(offset, count, symbols);
-    return HitbtcAdapters.adaptTradeHistory(tradeHistoryRaw, exchange.getExchangeMetaData());
-  }
+    @Override
+    public OpenOrders getOpenOrders(OpenOrdersParams params) throws IOException {
+        List<HitbtcOrder> openOrdersRaw = getOpenOrdersRaw();
+        return HitbtcAdapters.adaptOpenOrders(openOrdersRaw);
+    }
 
-  @Override
-  public TradeHistoryParams createTradeHistoryParams() {
+    @Override
+    public String placeMarketOrder(MarketOrder marketOrder) throws IOException {
+        return placeMarketOrderRaw(marketOrder).clientOrderId;
+    }
 
-    return HitbtcTradeHistoryParams.builder().build();
-  }
+    @Override
+    public String placeLimitOrder(LimitOrder limitOrder) throws IOException {
+        return placeLimitOrderRaw(limitOrder).clientOrderId;
+    }
 
-  @Override
-  public OpenOrdersParams createOpenOrdersParams() {
+    @Override
+    public boolean cancelOrder(String orderId) throws IOException {
+        HitbtcOrder cancelOrderRaw = cancelOrderRaw(orderId);
+        return "canceled".equals(cancelOrderRaw.status);
+    }
 
-    return null;
-  }
+    @Override
+    public boolean cancelOrder(CancelOrderParams orderParams) throws IOException {
+        if (orderParams instanceof CancelOrderByIdParams) {
+            return cancelOrder(((CancelOrderByIdParams) orderParams).getOrderId());
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Required parameters: {@link TradeHistoryParamPaging} {@link TradeHistoryParamCurrencyPair}
+     */
+    @Override
+    public UserTrades getTradeHistory(TradeHistoryParams params) throws IOException {
+
+        int count = 1000;
+        int offset = 0;
+
+        if (params instanceof TradeHistoryParamPaging) {
+            TradeHistoryParamPaging pagingParams = (TradeHistoryParamPaging) params;
+            if (pagingParams.getPageLength() != null) {
+                count = pagingParams.getPageLength();
+            }
+
+            Integer pageNumber = pagingParams.getPageNumber();
+            offset = count * (pageNumber != null ? pageNumber : 0);
+        }
+
+        String symbols = null;
+        if (params instanceof TradeHistoryParamCurrencyPair) {
+            TradeHistoryParamCurrencyPair tradeHistoryParamCurrencyPair = (TradeHistoryParamCurrencyPair) params;
+            CurrencyPair pair = tradeHistoryParamCurrencyPair.getCurrencyPair();
+            symbols = HitbtcAdapters.adaptCurrencyPair(pair);
+        }
+
+        List<HitbtcOwnTrade> tradeHistoryRaw = getTradeHistoryRaw(offset, count, symbols);
+        return HitbtcAdapters.adaptTradeHistory(tradeHistoryRaw, exchange.getExchangeMetaData());
+    }
+
+    @Override
+    public TradeHistoryParams createTradeHistoryParams() {
+
+        return HitbtcTradeHistoryParams.builder().build();
+    }
+
+    @Override
+    public OpenOrdersParams createOpenOrdersParams() {
+
+        return null;
+    }
 
   @Override
   public Collection<Order> getOrder(String... orderIds) throws IOException {
+    List<String> ids = Arrays.asList(orderIds);
+    List<HitbtcOrder> orders = getOrders();
+    List<HitbtcOwnTrade> trades = getTradeHistoryRaw(0, 1000, "");
 
-    throw new NotYetImplementedForExchangeException();
+    List<Order> o = orders.stream()
+        .filter(order -> ids.contains(order.clientOrderId))
+        .map(order -> {
+            HitbtcOwnTrade trade= trades.stream()
+                .filter(t->t.getClientOrderId().equals(order.clientOrderId))
+                .findFirst()
+                .orElse(null);
+
+            if (order.type.equals("limit")) {
+              OrderType type = HitbtcAdapters.adaptOrderType(order.side);
+
+              return new LimitOrder(
+                  type,
+                  order.quantity,
+                  HitbtcAdapters.adaptSymbol(order.symbol),
+                  order.clientOrderId,
+                  order.getCreatedAt(),
+                  trade.getPrice());
+          } else if (order.type.equals("market")) {
+              OrderType type = HitbtcAdapters.adaptOrderType(order.side);
+              OrderStatus status = HitbtcAdapters.adaptOrderStatus(order.status);
+
+              return new MarketOrder(
+                  type,
+                  order.quantity,
+                  HitbtcAdapters.adaptSymbol(order.symbol),
+                  order.clientOrderId,
+                  order.getCreatedAt(),
+                  trade.getPrice(),
+                  order.cumQuantity,
+                  status);
+          }
+          throw new RuntimeException("Unsupported order type: " + order.type);
+        })
+        .collect(Collectors.toList());
+    return o;
   }
 
-  @Override
-  public void verifyOrder(LimitOrder limitOrder) {
+    @Override
+    public void verifyOrder(LimitOrder limitOrder) {
 
-    throw new NotYetImplementedForExchangeException();
-  }
+        throw new NotYetImplementedForExchangeException();
+    }
 
-  @Override
-  public void verifyOrder(MarketOrder marketOrder) {
+    @Override
+    public void verifyOrder(MarketOrder marketOrder) {
 
-    throw new NotYetImplementedForExchangeException();
-  }
+        throw new NotYetImplementedForExchangeException();
+    }
 }
